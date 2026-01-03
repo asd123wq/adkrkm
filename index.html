@@ -1,2 +1,163 @@
--
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>بوت أذكركم</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; background-color: #000; color: white; margin: 0; overflow-x: hidden; }
+        .glass-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(16, 185, 129, 0.2); }
+        .active-tab { background: white !important; color: #059669 !important; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
+        };
 
+        function PrayerApp() {
+            const [activeTab, setActiveTab] = useState('home');
+            const [tasbihCount, setTasbihCount] = useState(0);
+            const [prayerTimes, setPrayerTimes] = useState(null);
+            const [locationName, setLocationName] = useState('جاري تحديد الموقع...');
+            const [loading, setLoading] = useState(true);
+            const tg = window.Telegram?.WebApp;
+
+            useEffect(() => {
+                if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#059669'); }
+                getUserLocation();
+            }, []);
+
+            // دالة للحصول على إحداثيات المستخدم
+            const getUserLocation = () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const { latitude, longitude } = position.coords;
+                            fetchPrayerTimesByCoords(latitude, longitude);
+                            setLocationName("موقعك الحالي");
+                        },
+                        (error) => {
+                            console.error("خطأ في تحديد الموقع، سيتم استخدام الرياض كافتراضي", error);
+                            fetchPrayerTimesByCity('Riyadh', 'Saudi Arabia');
+                            setLocationName("الرياض (تلقائي)");
+                        }
+                    );
+                } else {
+                    fetchPrayerTimesByCity('Riyadh', 'Saudi Arabia');
+                }
+            };
+
+            const formatTime = (time) => {
+                if (!time) return "--:--";
+                let [hours, minutes] = time.split(':');
+                hours = parseInt(hours) % 12 || 12;
+                return `${hours}:${minutes}`;
+            };
+
+            // جلب المواقيت بناءً على الإحداثيات
+            const fetchPrayerTimesByCoords = async (lat, lng) => {
+                try {
+                    const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=4`);
+                    const data = await res.json();
+                    if (data.code === 200) setPrayerTimes(data.data.timings);
+                    setLoading(false);
+                } catch (e) { setLoading(false); }
+            };
+
+            const fetchPrayerTimesByCity = async (city, country) => {
+                try {
+                    const res = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${city}&country=${country}&method=4`);
+                    const data = await res.json();
+                    if (data.code === 200) setPrayerTimes(data.data.timings);
+                    setLoading(false);
+                } catch (e) { setLoading(false); }
+            };
+
+            const prayerLabels = { Fajr: 'الفجر', Sunrise: 'الشروق', Dhuhr: 'الظهر', Asr: 'العصر', Maghrib: 'المغرب', Isha: 'العشاء' };
+
+            return (
+                <div className="flex flex-col min-h-screen max-w-md mx-auto relative pb-10">
+                    <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-6 sticky top-0 z-50 shadow-2xl rounded-b-[2rem]">
+                        <h1 className="text-2xl font-black text-center mb-6 tracking-wider">بوت أذكركم</h1>
+                        <div className="flex bg-emerald-900/40 p-1 rounded-2xl gap-1">
+                            {['home', 'tasbih', 'about'].map((tab) => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 ${activeTab === tab ? 'active-tab shadow-lg' : 'text-emerald-100'}`}>
+                                    <Icon name={tab === 'home' ? 'home' : tab === 'tasbih' ? 'fingerprint' : 'info'} size={16} />
+                                    {tab === 'home' ? 'الرئيسية' : tab === 'tasbih' ? 'تسبيح' : 'نبذة'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <main className="p-5 flex-1 overflow-y-auto">
+                        {activeTab === 'home' && (
+                            <div className="space-y-6 animate-in fade-in duration-500">
+                                <div className="flex items-center justify-center gap-2 text-emerald-400 bg-emerald-500/10 py-3 rounded-2xl border border-emerald-500/20">
+                                    <Icon name="map-pin" size={18} />
+                                    <span className="font-bold text-sm">{locationName}</span>
+                                </div>
+                                {loading ? <div className="text-center py-20 font-bold">جاري تحديد الموقع وحساب المواقيت...</div> : (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {Object.entries(prayerLabels).map(([key, label]) => (
+                                            <div key={key} className="glass-card p-5 rounded-3xl text-center shadow-xl">
+                                                <div className="text-emerald-500 text-sm font-bold mb-1 opacity-80">{label}</div>
+                                                <div className="text-2xl font-black tracking-tighter">{formatTime(prayerTimes?.[key])}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'tasbih' && (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-10">
+                                <div onClick={() => { setTasbihCount(c => c + 1); if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium'); }} className="w-72 h-72 rounded-full border-[6px] border-emerald-500/20 flex items-center justify-center bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.15)] active:scale-90 transition-all cursor-pointer">
+                                    <div className="text-center">
+                                        <div className="text-8xl font-black text-white">{tasbihCount}</div>
+                                        <div className="text-emerald-400 font-black mt-2 uppercase tracking-widest">سبح الآن</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => setTasbihCount(0)} className="bg-gray-900/80 text-gray-400 px-8 py-3 rounded-full text-sm font-bold border border-gray-800">تصفير العداد</button>
+                            </div>
+                        )}
+
+                        {activeTab === 'about' && (
+                            <div className="text-center space-y-6 py-6 animate-in fade-in duration-500">
+                                <div className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                                        <Icon name="user" size={32} className="text-white" />
+                                    </div>
+                                    <h2 className="text-2xl font-black mb-2 text-emerald-500">بوت أذكركم</h2>
+                                    <div className="h-px bg-emerald-500/20 w-full my-6"></div>
+                                    <p className="text-gray-200 leading-relaxed font-bold italic text-lg">
+                                        قال تعالى : ﴿فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ﴾
+                                    </p>
+                                    <div className="mt-8 pt-6 border-t border-emerald-500/10">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">تطوير بواسطة</p>
+                                        <p className="text-lg font-black text-emerald-500">lcczzl</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                    <footer className="fixed bottom-4 left-0 right-0 text-center"><p className="text-[10px] text-gray-600 font-bold tracking-[0.3em]">اذكر الله يذكرك</p></footer>
+                </div>
+            );
+        }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PrayerApp />);
+    </script>
+</body>
+</html>
