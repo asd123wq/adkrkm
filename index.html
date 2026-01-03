@@ -28,7 +28,13 @@
 
         function PrayerApp() {
             const [activeTab, setActiveTab] = useState('home');
-            const [tasbihCount, setTasbihCount] = useState(0);
+            
+            // جلب القيمة المحفوظة من ذاكرة المتصفح عند الفتح
+            const [tasbihCount, setTasbihCount] = useState(() => {
+                const saved = localStorage.getItem('user_tasbih_count');
+                return saved !== null ? parseInt(saved) : 0;
+            });
+
             const [prayerTimes, setPrayerTimes] = useState(null);
             const [locationMessage, setLocationMessage] = useState('جاري تحديد الموقع...');
             const [isLocationError, setIsLocationError] = useState(false);
@@ -39,6 +45,11 @@
                 if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#059669'); }
                 getUserLocation();
             }, []);
+
+            // حفظ القيمة تلقائياً في ذاكرة المتصفح عند كل تغيير
+            useEffect(() => {
+                localStorage.setItem('user_tasbih_count', tasbihCount);
+            }, [tasbihCount]);
 
             const getUserLocation = () => {
                 if (navigator.geolocation) {
@@ -130,19 +141,19 @@
                                         <div className="text-emerald-400 font-black mt-2">سبح الآن</div>
                                     </div>
                                 </div>
-                                <button onClick={() => setTasbihCount(0)} className="bg-gray-900/80 text-gray-400 px-8 py-3 rounded-full text-sm font-bold border border-gray-800">تصفير العداد</button>
+                                <button onClick={() => { if(confirm("هل تريد تصفير العداد؟")) setTasbihCount(0); }} className="bg-gray-900/80 text-gray-400 px-8 py-3 rounded-full text-sm font-bold border border-gray-800">تصفير العداد</button>
                             </div>
                         )}
 
                         {activeTab === 'about' && (
                             <div className="text-center space-y-6 py-6 animate-in fade-in duration-500">
-                                <div className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden">
+                                <div className="glass-card p-8 rounded-[2.5rem] relative overflow-hidden text-center">
                                     <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl">
                                         <Icon name="user" size={32} className="text-white" />
                                     </div>
                                     <h2 className="text-2xl font-black mb-2 text-emerald-500">بوت أذكركم</h2>
                                     <div className="h-px bg-emerald-500/20 w-full my-6"></div>
-                                    <p className="text-gray-200 leading-relaxed font-bold italic text-lg">
+                                    <p className="text-gray-200 leading-relaxed font-bold italic text-lg px-2">
                                         قال تعالى : ﴿فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ﴾
                                     </p>
                                     <div className="mt-8 pt-6 border-t border-emerald-500/10">
