@@ -30,7 +30,8 @@
             const [activeTab, setActiveTab] = useState('home');
             const [tasbihCount, setTasbihCount] = useState(0);
             const [prayerTimes, setPrayerTimes] = useState(null);
-            const [locationName, setLocationName] = useState('جاري تحديد الموقع...');
+            const [locationMessage, setLocationMessage] = useState('جاري تحديد الموقع...');
+            const [isLocationError, setIsLocationError] = useState(false);
             const [loading, setLoading] = useState(true);
             const tg = window.Telegram?.WebApp;
 
@@ -39,23 +40,24 @@
                 getUserLocation();
             }, []);
 
-            // دالة للحصول على إحداثيات المستخدم
             const getUserLocation = () => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             const { latitude, longitude } = position.coords;
                             fetchPrayerTimesByCoords(latitude, longitude);
-                            setLocationName("موقعك الحالي");
+                            setLocationMessage("موقعك الحالي");
+                            setIsLocationError(false);
                         },
                         (error) => {
-                            console.error("خطأ في تحديد الموقع، سيتم استخدام الرياض كافتراضي", error);
                             fetchPrayerTimesByCity('Riyadh', 'Saudi Arabia');
-                            setLocationName("الرياض (تلقائي)");
+                            setLocationMessage("فشلت في تحديد موقعك بسبب اعدادات خصوصيتك فعل الموقع من الاعدادات وارجع للبوت وسوي سماح للموقع الاوقات تلقائيه على الرياض .");
+                            setIsLocationError(true);
                         }
                     );
                 } else {
                     fetchPrayerTimesByCity('Riyadh', 'Saudi Arabia');
+                    setLocationMessage("الاوقات تلقائيه على الرياض .");
                 }
             };
 
@@ -66,7 +68,6 @@
                 return `${hours}:${minutes}`;
             };
 
-            // جلب المواقيت بناءً على الإحداثيات
             const fetchPrayerTimesByCoords = async (lat, lng) => {
                 try {
                     const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=4`);
@@ -104,11 +105,11 @@
                     <main className="p-5 flex-1 overflow-y-auto">
                         {activeTab === 'home' && (
                             <div className="space-y-6 animate-in fade-in duration-500">
-                                <div className="flex items-center justify-center gap-2 text-emerald-400 bg-emerald-500/10 py-3 rounded-2xl border border-emerald-500/20">
-                                    <Icon name="map-pin" size={18} />
-                                    <span className="font-bold text-sm">{locationName}</span>
+                                <div className={`flex items-start justify-center gap-2 py-3 px-4 rounded-2xl border ${isLocationError ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'}`}>
+                                    <Icon name="map-pin" size={24} className="mt-1 flex-shrink-0" />
+                                    <span className="font-bold text-xs leading-relaxed">{locationMessage}</span>
                                 </div>
-                                {loading ? <div className="text-center py-20 font-bold">جاري تحديد الموقع وحساب المواقيت...</div> : (
+                                {loading ? <div className="text-center py-20 font-bold">جاري التحميل...</div> : (
                                     <div className="grid grid-cols-2 gap-4">
                                         {Object.entries(prayerLabels).map(([key, label]) => (
                                             <div key={key} className="glass-card p-5 rounded-3xl text-center shadow-xl">
@@ -126,7 +127,7 @@
                                 <div onClick={() => { setTasbihCount(c => c + 1); if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium'); }} className="w-72 h-72 rounded-full border-[6px] border-emerald-500/20 flex items-center justify-center bg-emerald-500/10 shadow-[0_0_60px_rgba(16,185,129,0.15)] active:scale-90 transition-all cursor-pointer">
                                     <div className="text-center">
                                         <div className="text-8xl font-black text-white">{tasbihCount}</div>
-                                        <div className="text-emerald-400 font-black mt-2 uppercase tracking-widest">سبح الآن</div>
+                                        <div className="text-emerald-400 font-black mt-2">سبح الآن</div>
                                     </div>
                                 </div>
                                 <button onClick={() => setTasbihCount(0)} className="bg-gray-900/80 text-gray-400 px-8 py-3 rounded-full text-sm font-bold border border-gray-800">تصفير العداد</button>
