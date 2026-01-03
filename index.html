@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بوت أذكركم</title>
+    <title>بوت أذكاركم</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -102,7 +102,7 @@
             return (
                 <div className="flex flex-col min-h-screen max-w-md mx-auto relative pb-10">
                     <div className="bg-gradient-to-r from-emerald-600 to-teal-700 p-6 sticky top-0 z-50 shadow-2xl rounded-b-[2rem]">
-                        <h1 className="text-2xl font-black text-center mb-6 tracking-wider">بوت أذكركم</h1>
+                        <h1 className="text-2xl font-black text-center mb-6 tracking-wider">بوت أذكاركم</h1>
                         <div className="flex bg-emerald-900/40 p-1 rounded-2xl gap-1">
                             {['home', 'tasbih', 'about'].map((tab) => (
                                 <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 rounded-xl text-sm font-bold flex justify-center items-center gap-2 ${activeTab === tab ? 'active-tab shadow-lg' : 'text-emerald-100'}`}>
@@ -151,13 +151,13 @@
                                     <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mx-auto mb-6 flex items-center justify-center shadow-2xl">
                                         <Icon name="user" size={32} className="text-white" />
                                     </div>
-                                    <h2 className="text-2xl font-black mb-2 text-emerald-500">بوت أذكركم</h2>
+                                    <h2 className="text-2xl font-black mb-2 text-emerald-500">بوت أذكاركم</h2>
                                     <div className="h-px bg-emerald-500/20 w-full my-6"></div>
                                     <p className="text-gray-200 leading-relaxed font-bold italic text-lg px-2">
                                         قال تعالى : ﴿فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ﴾
                                     </p>
                                     <div className="mt-8 pt-6 border-t border-emerald-500/10">
-                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">تطوير بواسطة</p>
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">تم التطوير من</p>
                                         <p className="text-lg font-black text-emerald-500">lcczzl</p>
                                     </div>
                                 </div>
